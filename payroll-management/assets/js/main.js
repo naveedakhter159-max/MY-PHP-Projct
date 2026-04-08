@@ -1,96 +1,88 @@
-/* PayRoll Pro - Main JS */
+/* Payroll System - Main JS */
 
-// Toggle Sidebar
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    sidebar.classList.toggle('show');
-    overlay.classList.toggle('show');
-}
-
-// Initialize DataTables
-function initDataTable(selector, options = {}) {
-    const defaults = {
-        responsive: true,
-        pageLength: 10,
-        language: {
-            search: '',
-            searchPlaceholder: 'Search...',
-            lengthMenu: 'Show _MENU_ entries',
-            info: 'Showing _START_ to _END_ of _TOTAL_ entries',
-            emptyTable: 'No data available',
-        },
-        dom: "<'row mb-3'<'col-sm-6 d-flex align-items-center'l><'col-sm-6'f>>" +
-             "<'row'<'col-sm-12'tr>>" +
-             "<'row mt-3'<'col-sm-5'i><'col-sm-7'p>>",
-    };
-    return $(selector).DataTable({ ...defaults, ...options });
-}
-
-// Confirm Delete
+// Confirm delete via SweetAlert2
 function confirmDelete(url, name) {
     Swal.fire({
         title: 'Delete ' + (name || 'this record') + '?',
-        text: 'This action cannot be undone.',
+        text: 'This cannot be undone.',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, Delete',
+        confirmButtonColor: '#e53935',
+        cancelButtonColor: '#9e9e9e',
+        confirmButtonText: 'Delete',
         cancelButtonText: 'Cancel',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = url;
-        }
+    }).then(r => { if (r.isConfirmed) window.location.href = url; });
+}
+
+// Show toast
+function showToast(type, msg) {
+    const icons = { success: 'success', error: 'error', warning: 'warning', info: 'info' };
+    Swal.fire({
+        toast: true, position: 'top-end',
+        icon: icons[type] || 'info',
+        title: msg,
+        showConfirmButton: false,
+        timer: 3500, timerProgressBar: true,
     });
 }
 
-// Auto-dismiss alerts
-document.addEventListener('DOMContentLoaded', function () {
-    // Initialize Select2
-    if (typeof $.fn.select2 !== 'undefined') {
-        $('.select2').select2({
-            theme: 'bootstrap-5',
-            width: '100%',
-        });
+// Sort table
+function sortTable(tableId, col) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    const rows  = Array.from(tbody.querySelectorAll('tr'));
+    const th    = table.querySelectorAll('thead th')[col];
+    const asc   = th.dataset.sort !== 'asc';
+    table.querySelectorAll('thead th').forEach(t => { t.dataset.sort = ''; t.querySelector('.sort-icon') && (t.querySelector('.sort-icon').textContent = '⬍'); });
+    th.dataset.sort = asc ? 'asc' : 'desc';
+    if (th.querySelector('.sort-icon')) th.querySelector('.sort-icon').textContent = asc ? '↑' : '↓';
+    rows.sort((a, b) => {
+        const av = a.cells[col]?.textContent.trim() || '';
+        const bv = b.cells[col]?.textContent.trim() || '';
+        return asc ? av.localeCompare(bv, undefined, {numeric:true}) : bv.localeCompare(av, undefined, {numeric:true});
+    });
+    rows.forEach(r => tbody.appendChild(r));
+}
+
+// Client-side pagination
+function setupPagination(tableId, perPage = 5) {
+    const table  = document.getElementById(tableId);
+    if (!table) return;
+    const tbody  = table.querySelector('tbody');
+    const footer = table.closest('.card')?.querySelector('.table-footer');
+    if (!footer) return;
+    let rows     = Array.from(tbody.querySelectorAll('tr'));
+    let current  = 1;
+
+    function render() {
+        const total = Math.ceil(rows.length / perPage) || 1;
+        rows.forEach((r, i) => r.style.display = (i >= (current-1)*perPage && i < current*perPage) ? '' : 'none');
+        footer.querySelector('.records-count').textContent = rows.length + ' record(s)';
+        footer.querySelector('.page-info').textContent = 'Page ' + current + ' of ' + total;
+        footer.querySelector('.btn-prev').disabled = current <= 1;
+        footer.querySelector('.btn-next').disabled = current >= total;
     }
 
-    // Auto dismiss flash messages
-    const alerts = document.querySelectorAll('.alert-auto-dismiss');
-    alerts.forEach(function (alert) {
-        setTimeout(function () {
-            alert.style.transition = 'opacity 0.5s';
-            alert.style.opacity = '0';
-            setTimeout(function () { alert.remove(); }, 500);
-        }, 4000);
+    footer.querySelector('.btn-prev')?.addEventListener('click', () => { if (current > 1) { current--; render(); } });
+    footer.querySelector('.btn-next')?.addEventListener('click', () => {
+        const total = Math.ceil(rows.length / perPage) || 1;
+        if (current < total) { current++; render(); }
     });
+    render();
+}
 
-    // Sidebar active link on mobile close
-    const navLinks = document.querySelectorAll('.sidebar .nav-link');
-    navLinks.forEach(function (link) {
-        link.addEventListener('click', function () {
-            if (window.innerWidth < 992) {
-                toggleSidebar();
-            }
-        });
+// Modal helpers
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Close modal on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+        m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+    });
+    // Init paginations
+    document.querySelectorAll('[data-paginate]').forEach(el => {
+        setupPagination(el.id, parseInt(el.dataset.paginate) || 5);
     });
 });
-
-// Flash message helper
-function showToast(type, message) {
-    const iconMap = { success: 'success', error: 'error', warning: 'warning', info: 'info' };
-    Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: iconMap[type] || 'info',
-        title: message,
-        showConfirmButton: false,
-        timer: 3500,
-        timerProgressBar: true,
-    });
-}
-
-// Print payslip
-function printPayslip() {
-    window.print();
-}

@@ -1,185 +1,120 @@
 <?php
 require_once '../config/database.php';
 require_once '../config/auth.php';
-requireLogin();
-$depth = 1;
-$pageTitle = 'Reports';
-$breadcrumb = ['Dashboard' => '../dashboard.php', 'Reports' => null];
+requireLogin(1);
+$depth=1; $pageTitle='Reports';
 $conn = getDBConnection();
 
-$filterMonth = (int)($_GET['month'] ?? date('n'));
-$filterYear  = (int)($_GET['year']  ?? date('Y'));
-$filterDept  = (int)($_GET['dept']  ?? 0);
+$companyFilter = (int)($_GET['company'] ?? 0);
+$monthFilter   = (int)($_GET['month']   ?? date('n'));
+$yearFilter    = (int)($_GET['year']    ?? date('Y'));
 
-$where = "WHERE p.pay_month=$filterMonth AND p.pay_year=$filterYear";
-if ($filterDept) $where .= " AND e.department_id=$filterDept";
+$where = "WHERE p.pay_month=$monthFilter AND p.pay_year=$yearFilter";
+if ($companyFilter) $where .= " AND p.company_id=$companyFilter";
 
-$payrolls = $conn->query("
-    SELECT p.*, CONCAT(e.first_name,' ',e.last_name) emp_name, e.employee_id emp_code,
-           d.name dept_name, des.title designation
-    FROM payroll p
-    JOIN employees e ON p.employee_id = e.id
-    LEFT JOIN departments d ON e.department_id = d.id
-    LEFT JOIN designations des ON e.designation_id = des.id
-    $where ORDER BY e.first_name
-");
+$payrolls  = $conn->query("SELECT p.*, c.name company_name, CONCAT(e.first_name,' ',e.last_name) emp_name, e.employee_id emp_code, e.department
+    FROM payroll p JOIN companies c ON p.company_id=c.id JOIN employees e ON p.employee_id=e.id $where ORDER BY c.name, e.first_name");
+$totals    = $conn->query("SELECT COALESCE(SUM(gross_salary),0) gross, COALESCE(SUM(total_deductions),0) ded, COALESCE(SUM(net_salary),0) net, COUNT(*) cnt FROM payroll p $where")->fetch_assoc();
+$companies = $conn->query("SELECT id, name FROM companies ORDER BY name");
 
-// Totals
-$totals = $conn->query("SELECT COALESCE(SUM(gross_salary),0) gross, COALESCE(SUM(total_deductions),0) ded, COALESCE(SUM(net_salary),0) net, COUNT(*) cnt
-    FROM payroll p JOIN employees e ON p.employee_id=e.id $where")->fetch_assoc();
-
-$departments = $conn->query("SELECT * FROM departments ORDER BY name");
-
-include '../includes/header.php';
-include '../includes/sidebar.php';
+include '../includes/header.php'; include '../includes/sidebar.php';
 ?>
 
 <div class="page-header">
-    <div class="page-header-left">
-        <h1><i class="fas fa-chart-bar me-2 text-primary"></i>Payroll Reports</h1>
-        <p>View and export payroll reports</p>
-    </div>
-    <button onclick="window.print()" class="btn btn-outline-secondary no-print">
-        <i class="fas fa-print me-2"></i>Print Report
-    </button>
+    <div><h1>Payroll Reports</h1><p class="subtitle">View and export payroll data</p></div>
+    <button onclick="window.print()" class="btn btn-outline no-print"><i class="fa fa-print"></i> Print</button>
 </div>
 
-<!-- Filter -->
-<div class="card mb-4 no-print">
-    <div class="card-body py-2">
-        <form class="row g-2 align-items-end">
-            <div class="col-auto">
-                <label class="form-label mb-1" style="font-size:12px;font-weight:600">Month</label>
-                <select class="form-select form-select-sm" name="month" style="width:130px">
-                    <?php for ($m=1; $m<=12; $m++): ?>
-                    <option value="<?= $m ?>" <?= $filterMonth==$m ? 'selected' : '' ?>><?= monthName($m) ?></option>
-                    <?php endfor; ?>
-                </select>
-            </div>
-            <div class="col-auto">
-                <label class="form-label mb-1" style="font-size:12px;font-weight:600">Year</label>
-                <select class="form-select form-select-sm" name="year" style="width:100px">
-                    <?php for ($y=date('Y')-2; $y<=date('Y')+1; $y++): ?>
-                    <option value="<?= $y ?>" <?= $filterYear==$y ? 'selected' : '' ?>><?= $y ?></option>
-                    <?php endfor; ?>
-                </select>
-            </div>
-            <div class="col-auto">
-                <label class="form-label mb-1" style="font-size:12px;font-weight:600">Department</label>
-                <select class="form-select form-select-sm" name="dept" style="width:160px">
-                    <option value="">All Departments</option>
-                    <?php while ($d = $departments->fetch_assoc()): ?>
-                    <option value="<?= $d['id'] ?>" <?= $filterDept==$d['id'] ? 'selected' : '' ?>><?= escape($d['name']) ?></option>
+<!-- Filters -->
+<div class="card no-print" style="margin-bottom:14px">
+    <div class="card-body" style="padding:12px 16px">
+        <form style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div><label class="form-label" style="font-size:11px">Company</label>
+                <select name="company" class="form-select" style="width:160px;padding:6px 10px">
+                    <option value="">All Companies</option>
+                    <?php while($c=$companies->fetch_assoc()): ?>
+                    <option value="<?=$c['id']?>" <?=$companyFilter==$c['id']?'selected':''?>><?=esc($c['name'])?></option>
                     <?php endwhile; ?>
                 </select>
             </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-filter me-1"></i>Filter</button>
+            <div><label class="form-label" style="font-size:11px">Month</label>
+                <select name="month" class="form-select" style="width:120px;padding:6px 10px">
+                    <?php for ($m=1;$m<=12;$m++): ?>
+                    <option value="<?=$m?>" <?=$monthFilter==$m?'selected':''?>><?=monthName($m)?></option>
+                    <?php endfor; ?>
+                </select>
             </div>
+            <div><label class="form-label" style="font-size:11px">Year</label>
+                <select name="year" class="form-select" style="width:90px;padding:6px 10px">
+                    <?php for ($y=date('Y')-2;$y<=date('Y')+1;$y++): ?>
+                    <option value="<?=$y?>" <?=$yearFilter==$y?'selected':''?>><?=$y?></option>
+                    <?php endfor; ?>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Generate Report</button>
         </form>
     </div>
 </div>
 
-<!-- Summary Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-3">
-        <div class="stat-card primary">
-            <div class="stat-icon primary"><i class="fas fa-users"></i></div>
-            <div class="stat-body"><div class="stat-value"><?= $totals['cnt'] ?></div><div class="stat-label">Employees</div></div>
-        </div>
-    </div>
-    <div class="col-sm-3">
-        <div class="stat-card info">
-            <div class="stat-icon info"><i class="fas fa-money-bill"></i></div>
-            <div class="stat-body"><div class="stat-value" style="font-size:18px"><?= currency($totals['gross']) ?></div><div class="stat-label">Gross Payroll</div></div>
-        </div>
-    </div>
-    <div class="col-sm-3">
-        <div class="stat-card danger">
-            <div class="stat-icon danger"><i class="fas fa-minus"></i></div>
-            <div class="stat-body"><div class="stat-value" style="font-size:18px"><?= currency($totals['ded']) ?></div><div class="stat-label">Total Deductions</div></div>
-        </div>
-    </div>
-    <div class="col-sm-3">
-        <div class="stat-card success">
-            <div class="stat-icon success"><i class="fas fa-hand-holding-usd"></i></div>
-            <div class="stat-body"><div class="stat-value" style="font-size:18px"><?= currency($totals['net']) ?></div><div class="stat-label">Net Payroll</div></div>
-        </div>
-    </div>
+<!-- Summary -->
+<div class="stats-grid" style="margin-bottom:16px">
+    <div class="stat-card"><div class="stat-label">Employees</div><div class="stat-value"><?=$totals['cnt']?></div></div>
+    <div class="stat-card"><div class="stat-label">Gross Payroll</div><div class="stat-value" style="font-size:18px"><?=currency($totals['gross'])?></div></div>
+    <div class="stat-card"><div class="stat-label">Total Deductions</div><div class="stat-value" style="font-size:18px;color:#c62828"><?=currency($totals['ded'])?></div></div>
+    <div class="stat-card"><div class="stat-label">Net Payroll</div><div class="stat-value" style="font-size:18px;color:#2e7d32"><?=currency($totals['net'])?></div></div>
 </div>
 
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="card-title">
-            <i class="fas fa-table me-2"></i>
-            Payroll Report — <?= monthName($filterMonth).' '.$filterYear ?>
-        </h6>
-        <small class="text-muted">Generated: <?= date('d M Y, h:i A') ?></small>
+    <div class="card-header">
+        <span class="card-title">Payroll Report — <?=monthName($monthFilter).' '.$yearFilter?></span>
+        <small style="color:#aaa">Generated: <?=date('M d, Y H:i')?></small>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-bordered mb-0" id="reportTable">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Emp ID</th>
-                        <th>Name</th>
-                        <th>Department</th>
-                        <th>Days</th>
-                        <th>Basic</th>
-                        <th>HRA</th>
-                        <th>Other Allow.</th>
-                        <th>Gross</th>
-                        <th>PF</th>
-                        <th>ESI</th>
-                        <th>Tax</th>
-                        <th>Total Ded.</th>
-                        <th>Net Pay</th>
-                        <th>Status</th>
-                        <th class="no-print">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php $i=1; $payrolls->data_seek(0); while ($p = $payrolls->fetch_assoc()): ?>
-                <tr>
-                    <td><?= $i++ ?></td>
-                    <td><?= escape($p['emp_code']) ?></td>
-                    <td style="white-space:nowrap"><?= escape($p['emp_name']) ?></td>
-                    <td><?= escape($p['dept_name'] ?? '-') ?></td>
-                    <td><?= $p['present_days'].'/'.$p['working_days'] ?></td>
-                    <td><?= currency($p['basic_salary']) ?></td>
-                    <td><?= currency($p['hra']) ?></td>
-                    <td><?= currency($p['medical_allowance']+$p['transport_allowance']+$p['other_allowance']) ?></td>
-                    <td class="fw-bold"><?= currency($p['gross_salary']) ?></td>
-                    <td><?= currency($p['pf_deduction']) ?></td>
-                    <td><?= currency($p['esi_deduction']) ?></td>
-                    <td><?= currency($p['income_tax']) ?></td>
-                    <td class="text-danger"><?= currency($p['total_deductions']) ?></td>
-                    <td class="text-success fw-bold"><?= currency($p['net_salary']) ?></td>
-                    <td><?php $sc=['Generated'=>'bg-info','Paid'=>'bg-success','Cancelled'=>'bg-danger']; ?>
-                        <span class="badge <?= $sc[$p['status']] ?? 'bg-secondary' ?>"><?= $p['status'] ?></span></td>
-                    <td class="no-print">
-                        <a href="payslip.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Payslip">
-                            <i class="fas fa-file-pdf"></i>
-                        </a>
-                    </td>
+    <div class="table-wrapper">
+        <table class="data-table" id="repTable" data-paginate="25" style="font-size:12px">
+            <thead><tr>
+                <th>EMP ID</th><th>NAME</th><th>COMPANY</th><th>DEPARTMENT</th>
+                <th>BASIC</th><th>BONUS</th><th>GROSS</th>
+                <th>FED TAX</th><th>SS</th><th>MEDICARE</th><th>STATE</th><th>TOTAL DED</th>
+                <th>NET PAY</th><th>STATUS</th><th class="no-print">SLIP</th>
+            </tr></thead>
+            <tbody>
+            <?php $payrolls->data_seek(0); while ($p=$payrolls->fetch_assoc()): ?>
+            <tr>
+                <td><?=esc($p['emp_code'])?></td>
+                <td style="white-space:nowrap;font-weight:500"><?=esc($p['emp_name'])?></td>
+                <td><?=esc($p['company_name'])?></td>
+                <td><?=esc($p['department']??'-')?></td>
+                <td><?=currency($p['basic_salary'])?></td>
+                <td><?=currency($p['bonus']??0)?></td>
+                <td style="font-weight:600"><?=currency($p['gross_salary'])?></td>
+                <td><?=currency($p['federal_tax'])?></td>
+                <td><?=currency($p['social_security'])?></td>
+                <td><?=currency($p['medicare'])?></td>
+                <td><?=currency($p['state_tax'])?></td>
+                <td style="color:#c62828"><?=currency($p['total_deductions'])?></td>
+                <td style="font-weight:700;color:#2e7d32"><?=currency($p['net_salary'])?></td>
+                <td><?php $sc=['Generated'=>'badge-generated','Paid'=>'badge-paid','Pending'=>'badge-pending']; ?>
+                    <span class="badge <?=$sc[$p['status']]??'badge-secondary'?>"><?=$p['status']?></span></td>
+                <td class="no-print"><a href="payslip.php?id=<?=$p['id']?>" class="btn btn-outline btn-xs"><i class="fa fa-file-pdf"></i></a></td>
+            </tr>
+            <?php endwhile; ?>
+            </tbody>
+            <tfoot>
+                <tr style="background:#f9fafb;font-weight:700">
+                    <td colspan="6" style="text-align:right;padding:10px 14px">TOTALS:</td>
+                    <td><?=currency($totals['gross'])?></td>
+                    <td colspan="4"></td>
+                    <td style="color:#c62828"><?=currency($totals['ded'])?></td>
+                    <td style="color:#2e7d32"><?=currency($totals['net'])?></td>
+                    <td colspan="2"></td>
                 </tr>
-                <?php endwhile; ?>
-                </tbody>
-                <tfoot>
-                    <tr class="table-dark">
-                        <td colspan="8" class="text-end fw-bold">TOTALS</td>
-                        <td class="fw-bold"><?= currency($totals['gross']) ?></td>
-                        <td></td><td></td><td></td>
-                        <td class="fw-bold text-warning"><?= currency($totals['ded']) ?></td>
-                        <td class="fw-bold text-success"><?= currency($totals['net']) ?></td>
-                        <td colspan="2"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+            </tfoot>
+        </table>
+    </div>
+    <div class="table-footer">
+        <span class="records-count">—</span>
+        <div class="pagination"><button class="btn-prev">Prev</button><span class="page-info">Page 1 of 1</span><button class="btn-next">Next</button></div>
     </div>
 </div>
 
-<?php $extraJs = '<script>$(()=>initDataTable("#reportTable",{pageLength:25}));</script>';
-include '../includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>

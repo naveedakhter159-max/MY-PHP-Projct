@@ -160,6 +160,37 @@ CREATE TABLE IF NOT EXISTS `settings` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Per-Employee Tax Settings
+CREATE TABLE IF NOT EXISTS `employee_tax_settings` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `employee_id` INT NOT NULL UNIQUE,
+  -- Federal Tax
+  `filing_status` ENUM('Single','Married Filing Jointly','Married Filing Separately','Head of Household') DEFAULT 'Single',
+  `multiple_jobs` TINYINT DEFAULT 0,
+  `tax_exempt` TINYINT DEFAULT 0,
+  `dependents_count` INT DEFAULT 0,
+  `extra_withholding` DECIMAL(10,2) DEFAULT 0,
+  `other_income` DECIMAL(10,2) DEFAULT 0,
+  `fed_deductions` DECIMAL(10,2) DEFAULT 0,
+  -- State Tax
+  `state_code` VARCHAR(10) DEFAULT '',
+  `state_filing_status` ENUM('Single','Married') DEFAULT 'Single',
+  `state_allowances` INT DEFAULT 0,
+  `state_extra_withholding` DECIMAL(10,2) DEFAULT 0,
+  `disability_insurance` TINYINT DEFAULT 0,
+  -- Local Tax
+  `local_tax_enabled` TINYINT DEFAULT 0,
+  `local_city` VARCHAR(100) DEFAULT '',
+  `local_tax_rate` DECIMAL(6,3) DEFAULT 0,
+  -- Deductions
+  `contrib_401k_pct` DECIMAL(6,3) DEFAULT 0,
+  `health_insurance` DECIMAL(10,2) DEFAULT 0,
+  `other_deduction_name` VARCHAR(100) DEFAULT '',
+  `other_deduction_amount` DECIMAL(10,2) DEFAULT 0,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`employee_id`) REFERENCES `employees`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ============================================================
 -- Default Data
 -- ============================================================

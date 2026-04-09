@@ -38,6 +38,10 @@ function navActive($pages, $dirs = []) {
             <i class="fa-solid fa-chart-bar"></i>
             <span>Reports</span>
         </a>
+        <a href="<?= $base ?>users/index.php" class="<?= navActive('index.php', 'users') ?>">
+            <i class="fa-solid fa-user-shield"></i>
+            <span>Users</span>
+        </a>
         <a href="<?= $base ?>settings/index.php" class="<?= navActive('index.php', 'settings') ?>">
             <i class="fa-solid fa-gear"></i>
             <span>Settings</span>

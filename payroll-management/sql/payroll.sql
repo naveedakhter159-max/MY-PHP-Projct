@@ -152,6 +152,27 @@ CREATE TABLE IF NOT EXISTS `attendance` (
   FOREIGN KEY (`employee_id`) REFERENCES `employees`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Roles
+CREATE TABLE IF NOT EXISTS `roles` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(50) NOT NULL UNIQUE,
+  `description` VARCHAR(255) DEFAULT NULL,
+  `is_system` TINYINT DEFAULT 0,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Role Permissions
+CREATE TABLE IF NOT EXISTS `role_permissions` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `role_name` VARCHAR(50) NOT NULL,
+  `module` VARCHAR(50) NOT NULL,
+  `can_view`   TINYINT DEFAULT 1,
+  `can_edit`   TINYINT DEFAULT 0,
+  `can_delete` TINYINT DEFAULT 0,
+  UNIQUE KEY `role_module` (`role_name`,`module`),
+  FOREIGN KEY (`role_name`) REFERENCES `roles`(`name`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Settings
 CREATE TABLE IF NOT EXISTS `settings` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -194,6 +215,29 @@ CREATE TABLE IF NOT EXISTS `employee_tax_settings` (
 -- ============================================================
 -- Default Data
 -- ============================================================
+
+-- Default Roles
+INSERT IGNORE INTO `roles` (`name`,`description`,`is_system`) VALUES
+('admin',     'Full system access — all modules, all actions', 1),
+('hr',        'Human resources — manage employees and payroll', 1),
+('accountant','Finance team — view payroll, manage reports', 1);
+
+-- Default Permissions
+-- Admin: everything
+INSERT IGNORE INTO `role_permissions` (`role_name`,`module`,`can_view`,`can_edit`,`can_delete`) VALUES
+('admin','Dashboard',1,1,1),('admin','Companies',1,1,1),('admin','Employees',1,1,1),
+('admin','Payroll',1,1,1),('admin','Tax',1,1,1),('admin','Reports',1,1,1),
+('admin','Settings',1,1,1),('admin','Users',1,1,1);
+-- HR: view+edit most, no delete, no Settings/Users
+INSERT IGNORE INTO `role_permissions` (`role_name`,`module`,`can_view`,`can_edit`,`can_delete`) VALUES
+('hr','Dashboard',1,0,0),('hr','Companies',1,1,0),('hr','Employees',1,1,0),
+('hr','Payroll',1,1,0),('hr','Tax',1,1,0),('hr','Reports',1,0,0),
+('hr','Settings',0,0,0),('hr','Users',0,0,0);
+-- Accountant: view only on most, edit on Payroll/Reports
+INSERT IGNORE INTO `role_permissions` (`role_name`,`module`,`can_view`,`can_edit`,`can_delete`) VALUES
+('accountant','Dashboard',1,0,0),('accountant','Companies',1,0,0),('accountant','Employees',1,0,0),
+('accountant','Payroll',1,1,0),('accountant','Tax',1,0,0),('accountant','Reports',1,1,0),
+('accountant','Settings',0,0,0),('accountant','Users',0,0,0);
 
 -- Admin user (password: admin123)
 INSERT INTO `users` (`username`,`password`,`email`,`full_name`,`role`) VALUES

@@ -1,121 +1,67 @@
 <?php
 require_once '../config/database.php';
 require_once '../config/auth.php';
-requireLogin();
-$depth = 1;
-$pageTitle = 'Add Employee';
-$breadcrumb = ['Dashboard' => '../dashboard.php', 'Employees' => 'index.php', 'Add Employee' => null];
+requireLogin(1);
+$depth = 1; $pageTitle = 'Add Employee';
 $conn = getDBConnection();
 
-$errors = [];
+$companies = $conn->query("SELECT id, name FROM companies WHERE status='Active' ORDER BY name");
+
 $data = [
-    'employee_id' => '', 'first_name' => '', 'last_name' => '', 'email' => '',
+    'employee_id' => employeeIdGen(),
+    'company_id'  => '', 'first_name' => '', 'last_name' => '', 'email' => '',
     'phone' => '', 'gender' => 'Male', 'date_of_birth' => '', 'address' => '',
-    'city' => '', 'state' => '', 'zip_code' => '', 'department_id' => '',
-    'designation_id' => '', 'join_date' => date('Y-m-d'), 'employment_type' => 'Full-Time',
-    'bank_name' => '', 'account_number' => '', 'ifsc_code' => '', 'pan_number' => '',
-    'status' => 'Active',
+    'city' => '', 'state' => '', 'department' => '', 'position' => '',
+    'salary' => '', 'start_date' => date('Y-m-d'),
+    'employment_type' => 'Full-Time', 'bank_name' => '', 'account_number' => '',
+    'routing_number' => '', 'ssn_last4' => '', 'status' => 'Active',
 ];
 
-// Generate next employee ID
-$lastEmp = $conn->query("SELECT employee_id FROM employees ORDER BY id DESC LIMIT 1")->fetch_assoc();
-if ($lastEmp) {
-    $num = (int)preg_replace('/[^0-9]/', '', $lastEmp['employee_id']) + 1;
-    $data['employee_id'] = 'EMP' . str_pad($num, 3, '0', STR_PAD_LEFT);
-} else {
-    $data['employee_id'] = 'EMP001';
-}
-
-$departments   = $conn->query("SELECT * FROM departments ORDER BY name");
-$designations  = $conn->query("SELECT * FROM designations ORDER BY title");
+$errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $fields = ['employee_id','first_name','last_name','email','phone','gender','date_of_birth',
-               'address','city','state','zip_code','department_id','designation_id','join_date',
-               'employment_type','bank_name','account_number','ifsc_code','pan_number','status'];
-    foreach ($fields as $f) {
-        $data[$f] = trim($_POST[$f] ?? '');
-    }
+    $fields = ['employee_id','company_id','first_name','last_name','email','phone','gender',
+               'date_of_birth','address','city','state','department','position','salary',
+               'start_date','employment_type','bank_name','account_number','routing_number',
+               'ssn_last4','status'];
+    foreach ($fields as $f) $data[$f] = trim($_POST[$f] ?? '');
 
-    // Validate
     if (empty($data['first_name'])) $errors[] = 'First name is required.';
     if (empty($data['last_name']))  $errors[] = 'Last name is required.';
     if (empty($data['email']))      $errors[] = 'Email is required.';
     if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'Invalid email address.';
     if (empty($data['employee_id'])) $errors[] = 'Employee ID is required.';
+    if (empty($data['company_id']))  $errors[] = 'Please select a company.';
 
-    // Check duplicate
     if (empty($errors)) {
-        $empId  = $conn->real_escape_string($data['employee_id']);
-        $email  = $conn->real_escape_string($data['email']);
-        $exists = $conn->query("SELECT id FROM employees WHERE employee_id='$empId' OR email='$email' LIMIT 1");
-        if ($exists->num_rows > 0) $errors[] = 'Employee ID or email already exists.';
+        $empId = $conn->real_escape_string($data['employee_id']);
+        $email = $conn->real_escape_string($data['email']);
+        if ($conn->query("SELECT id FROM employees WHERE employee_id='$empId' OR email='$email' LIMIT 1")->num_rows > 0)
+            $errors[] = 'Employee ID or email already exists.';
     }
 
     if (empty($errors)) {
-        $stmt = $conn->prepare("INSERT INTO employees
-            (employee_id, first_name, last_name, email, phone, gender, date_of_birth, address,
-             city, state, zip_code, department_id, designation_id, join_date, employment_type,
-             bank_name, account_number, ifsc_code, pan_number, status)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-
-        $deptId  = !empty($data['department_id'])  ? (int)$data['department_id']  : null;
-        $desigId = !empty($data['designation_id']) ? (int)$data['designation_id'] : null;
-
-        $stmt->bind_param("sssssssssssiissssss s",
-            $data['employee_id'], $data['first_name'], $data['last_name'], $data['email'],
-            $data['phone'], $data['gender'], $data['date_of_birth'], $data['address'],
-            $data['city'], $data['state'], $data['zip_code'], $deptId, $desigId,
-            $data['join_date'], $data['employment_type'],
-            $data['bank_name'], $data['account_number'], $data['ifsc_code'],
-            $data['pan_number'], $data['status']
-        );
-
-        // Use a simpler bind
-        $empCode = $data['employee_id'];
-        $fName   = $data['first_name'];
-        $lName   = $data['last_name'];
-        $emEmail = $data['email'];
-        $phone   = $data['phone'];
-        $gender  = $data['gender'];
-        $dob     = $data['date_of_birth'] ?: null;
-        $addr    = $data['address'];
-        $city    = $data['city'];
-        $state   = $data['state'];
-        $zip     = $data['zip_code'];
-        $joinDate= $data['join_date'] ?: null;
-        $empType = $data['employment_type'];
-        $bank    = $data['bank_name'];
-        $accNo   = $data['account_number'];
-        $ifsc    = $data['ifsc_code'];
-        $pan     = $data['pan_number'];
-        $status  = $data['status'];
+        $e  = fn($v) => $conn->real_escape_string(trim((string)$v));
+        $coId    = (int)$data['company_id'];
+        $dob     = $data['date_of_birth']  ? "'{$e($data['date_of_birth'])}'" : 'NULL';
+        $start   = $data['start_date']     ? "'{$e($data['start_date'])}'"   : 'NULL';
+        $salary  = $data['salary'] !== ''  ? (float)$data['salary']          : 0;
+        $ssn     = $data['ssn_last4']      ? $e(substr($data['ssn_last4'],-4)) : '';
 
         $conn->query("INSERT INTO employees
-            (employee_id, first_name, last_name, email, phone, gender, date_of_birth, address,
-             city, state, zip_code, department_id, designation_id, join_date, employment_type,
-             bank_name, account_number, ifsc_code, pan_number, status)
+            (employee_id,company_id,first_name,last_name,email,phone,gender,date_of_birth,
+             address,city,state,department,position,salary,start_date,employment_type,
+             bank_name,account_number,routing_number,ssn_last4,status)
             VALUES (
-              '" . $conn->real_escape_string($empCode) . "',
-              '" . $conn->real_escape_string($fName) . "',
-              '" . $conn->real_escape_string($lName) . "',
-              '" . $conn->real_escape_string($emEmail) . "',
-              '" . $conn->real_escape_string($phone) . "',
-              '" . $conn->real_escape_string($gender) . "',
-              " . ($dob ? "'" . $conn->real_escape_string($dob) . "'" : "NULL") . ",
-              '" . $conn->real_escape_string($addr) . "',
-              '" . $conn->real_escape_string($city) . "',
-              '" . $conn->real_escape_string($state) . "',
-              '" . $conn->real_escape_string($zip) . "',
-              " . ($deptId ? $deptId : "NULL") . ",
-              " . ($desigId ? $desigId : "NULL") . ",
-              " . ($joinDate ? "'" . $conn->real_escape_string($joinDate) . "'" : "NULL") . ",
-              '" . $conn->real_escape_string($empType) . "',
-              '" . $conn->real_escape_string($bank) . "',
-              '" . $conn->real_escape_string($accNo) . "',
-              '" . $conn->real_escape_string($ifsc) . "',
-              '" . $conn->real_escape_string($pan) . "',
-              '" . $conn->real_escape_string($status) . "'
+              '{$e($data['employee_id'])}', $coId,
+              '{$e($data['first_name'])}', '{$e($data['last_name'])}',
+              '{$e($data['email'])}', '{$e($data['phone'])}', '{$e($data['gender'])}',
+              $dob, '{$e($data['address'])}', '{$e($data['city'])}', '{$e($data['state'])}',
+              '{$e($data['department'])}', '{$e($data['position'])}', $salary,
+              $start, '{$e($data['employment_type'])}',
+              '{$e($data['bank_name'])}', '{$e($data['account_number'])}',
+              '{$e($data['routing_number'])}', '$ssn',
+              '{$e($data['status'])}'
             )");
 
         if ($conn->affected_rows > 0) {
@@ -127,133 +73,119 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-include '../includes/header.php';
-include '../includes/sidebar.php';
+include '../includes/header.php'; include '../includes/sidebar.php';
 ?>
 
-<div class="page-header">
-    <div class="page-header-left">
-        <h1><i class="fas fa-user-plus me-2 text-primary"></i>Add Employee</h1>
-        <p>Fill in the details to add a new employee</p>
-    </div>
-    <a href="index.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
-</div>
-
 <?php if (!empty($errors)): ?>
-<div class="alert alert-danger">
-    <strong><i class="fas fa-exclamation-triangle me-2"></i>Please fix these errors:</strong>
-    <ul class="mb-0 mt-2">
-        <?php foreach ($errors as $e): ?><li><?= escape($e) ?></li><?php endforeach; ?>
-    </ul>
+<div style="background:#fdecea;border:1px solid #f5c6cb;padding:12px 16px;border-radius:8px;margin-bottom:16px;color:#c62828;font-size:13px">
+    <?php foreach ($errors as $er): ?><div>• <?=esc($er)?></div><?php endforeach; ?>
 </div>
 <?php endif; ?>
 
+<div class="page-header">
+    <div><h1>Add Employee</h1><p class="subtitle">Fill in details to add a new employee</p></div>
+    <a href="index.php" class="btn btn-outline"><i class="fa fa-arrow-left"></i> Back</a>
+</div>
+
 <form method="POST">
     <!-- Personal Information -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h6 class="card-title"><i class="fas fa-user me-2 text-primary"></i>Personal Information</h6>
-        </div>
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title"><i class="fa fa-user" style="color:#2e7d32;margin-right:6px"></i>Personal Information</span></div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Employee ID <span class="required-star">*</span></label>
-                    <input type="text" class="form-control" name="employee_id" value="<?= escape($data['employee_id']) ?>" required>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+                <div class="form-group">
+                    <label class="form-label">Employee ID <span style="color:#c62828">*</span></label>
+                    <input type="text" name="employee_id" class="form-control" value="<?=esc($data['employee_id'])?>" required>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">First Name <span class="required-star">*</span></label>
-                    <input type="text" class="form-control" name="first_name" value="<?= escape($data['first_name']) ?>" required>
+                <div class="form-group">
+                    <label class="form-label">First Name <span style="color:#c62828">*</span></label>
+                    <input type="text" name="first_name" class="form-control" value="<?=esc($data['first_name'])?>" required>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Last Name <span class="required-star">*</span></label>
-                    <input type="text" class="form-control" name="last_name" value="<?= escape($data['last_name']) ?>" required>
+                <div class="form-group">
+                    <label class="form-label">Last Name <span style="color:#c62828">*</span></label>
+                    <input type="text" name="last_name" class="form-control" value="<?=esc($data['last_name'])?>" required>
                 </div>
-                <div class="col-md-3">
+                <div class="form-group">
                     <label class="form-label">Gender</label>
-                    <select class="form-select" name="gender">
+                    <select name="gender" class="form-select">
                         <?php foreach (['Male','Female','Other'] as $g): ?>
-                        <option value="<?= $g ?>" <?= $data['gender']===$g ? 'selected' : '' ?>><?= $g ?></option>
+                        <option value="<?=$g?>" <?=$data['gender']===$g?'selected':''?>><?=$g?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Email Address <span class="required-star">*</span></label>
-                    <input type="email" class="form-control" name="email" value="<?= escape($data['email']) ?>" required>
+                <div class="form-group">
+                    <label class="form-label">Email <span style="color:#c62828">*</span></label>
+                    <input type="email" name="email" class="form-control" value="<?=esc($data['email'])?>" required>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Phone Number</label>
-                    <input type="text" class="form-control" name="phone" value="<?= escape($data['phone']) ?>">
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" class="form-control" value="<?=esc($data['phone'])?>">
                 </div>
-                <div class="col-md-4">
+                <div class="form-group">
                     <label class="form-label">Date of Birth</label>
-                    <input type="date" class="form-control" name="date_of_birth" value="<?= escape($data['date_of_birth']) ?>">
+                    <input type="date" name="date_of_birth" class="form-control" value="<?=esc($data['date_of_birth'])?>">
                 </div>
-                <div class="col-12">
-                    <label class="form-label">Address</label>
-                    <textarea class="form-control" name="address" rows="2"><?= escape($data['address']) ?></textarea>
-                </div>
-                <div class="col-md-4">
+            </div>
+            <div class="form-group" style="margin-top:14px">
+                <label class="form-label">Address</label>
+                <textarea name="address" class="form-control" rows="2"><?=esc($data['address'])?></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px">
+                <div class="form-group">
                     <label class="form-label">City</label>
-                    <input type="text" class="form-control" name="city" value="<?= escape($data['city']) ?>">
+                    <input type="text" name="city" class="form-control" value="<?=esc($data['city'])?>">
                 </div>
-                <div class="col-md-4">
+                <div class="form-group">
                     <label class="form-label">State</label>
-                    <input type="text" class="form-control" name="state" value="<?= escape($data['state']) ?>">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">ZIP Code</label>
-                    <input type="text" class="form-control" name="zip_code" value="<?= escape($data['zip_code']) ?>">
+                    <input type="text" name="state" class="form-control" value="<?=esc($data['state'])?>">
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Job Information -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h6 class="card-title"><i class="fas fa-briefcase me-2 text-warning"></i>Job Information</h6>
-        </div>
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title"><i class="fa fa-briefcase" style="color:#2e7d32;margin-right:6px"></i>Job Information</span></div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+                <div class="form-group">
+                    <label class="form-label">Company <span style="color:#c62828">*</span></label>
+                    <select name="company_id" class="form-select" required>
+                        <option value="">-- Select Company --</option>
+                        <?php $companies->data_seek(0); while ($c=$companies->fetch_assoc()): ?>
+                        <option value="<?=$c['id']?>" <?=$data['company_id']==$c['id']?'selected':''?>><?=esc($c['name'])?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label class="form-label">Department</label>
-                    <select class="form-select select2" name="department_id">
-                        <option value="">-- Select Department --</option>
-                        <?php $departments->data_seek(0); while ($d = $departments->fetch_assoc()): ?>
-                        <option value="<?= $d['id'] ?>" <?= $data['department_id']==$d['id'] ? 'selected' : '' ?>>
-                            <?= escape($d['name']) ?>
-                        </option>
-                        <?php endwhile; ?>
-                    </select>
+                    <input type="text" name="department" class="form-control" value="<?=esc($data['department'])?>" placeholder="e.g. Engineering">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Designation</label>
-                    <select class="form-select select2" name="designation_id">
-                        <option value="">-- Select Designation --</option>
-                        <?php $designations->data_seek(0); while ($d = $designations->fetch_assoc()): ?>
-                        <option value="<?= $d['id'] ?>" <?= $data['designation_id']==$d['id'] ? 'selected' : '' ?>>
-                            <?= escape($d['title']) ?>
-                        </option>
-                        <?php endwhile; ?>
-                    </select>
+                <div class="form-group">
+                    <label class="form-label">Position / Title</label>
+                    <input type="text" name="position" class="form-control" value="<?=esc($data['position'])?>" placeholder="e.g. Senior Developer">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Join Date</label>
-                    <input type="date" class="form-control" name="join_date" value="<?= escape($data['join_date']) ?>">
+                <div class="form-group">
+                    <label class="form-label">Annual Salary ($)</label>
+                    <input type="number" name="salary" class="form-control" step="0.01" min="0" value="<?=esc($data['salary'])?>">
                 </div>
-                <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="<?=esc($data['start_date'])?>">
+                </div>
+                <div class="form-group">
                     <label class="form-label">Employment Type</label>
-                    <select class="form-select" name="employment_type">
+                    <select name="employment_type" class="form-select">
                         <?php foreach (['Full-Time','Part-Time','Contract','Intern'] as $t): ?>
-                        <option value="<?= $t ?>" <?= $data['employment_type']===$t ? 'selected' : '' ?>><?= $t ?></option>
+                        <option value="<?=$t?>" <?=$data['employment_type']===$t?'selected':''?>><?=$t?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="form-group">
                     <label class="form-label">Status</label>
-                    <select class="form-select" name="status">
+                    <select name="status" class="form-select">
                         <?php foreach (['Active','Inactive','Terminated'] as $s): ?>
-                        <option value="<?= $s ?>" <?= $data['status']===$s ? 'selected' : '' ?>><?= $s ?></option>
+                        <option value="<?=$s?>" <?=$data['status']===$s?'selected':''?>><?=$s?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -261,36 +193,34 @@ include '../includes/sidebar.php';
         </div>
     </div>
 
-    <!-- Bank Information -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h6 class="card-title"><i class="fas fa-university me-2 text-info"></i>Bank & Tax Information</h6>
-        </div>
+    <!-- Bank & Tax Info -->
+    <div class="card" style="margin-bottom:20px">
+        <div class="card-header"><span class="card-title"><i class="fa fa-building-columns" style="color:#2e7d32;margin-right:6px"></i>Bank & Tax Information</span></div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-3">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+                <div class="form-group">
                     <label class="form-label">Bank Name</label>
-                    <input type="text" class="form-control" name="bank_name" value="<?= escape($data['bank_name']) ?>">
+                    <input type="text" name="bank_name" class="form-control" value="<?=esc($data['bank_name'])?>">
                 </div>
-                <div class="col-md-3">
+                <div class="form-group">
                     <label class="form-label">Account Number</label>
-                    <input type="text" class="form-control" name="account_number" value="<?= escape($data['account_number']) ?>">
+                    <input type="text" name="account_number" class="form-control" value="<?=esc($data['account_number'])?>">
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">IFSC / Routing Code</label>
-                    <input type="text" class="form-control" name="ifsc_code" value="<?= escape($data['ifsc_code']) ?>">
+                <div class="form-group">
+                    <label class="form-label">Routing Number</label>
+                    <input type="text" name="routing_number" class="form-control" value="<?=esc($data['routing_number'])?>">
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">PAN / Tax ID</label>
-                    <input type="text" class="form-control" name="pan_number" value="<?= escape($data['pan_number']) ?>">
+                <div class="form-group">
+                    <label class="form-label">SSN Last 4 Digits</label>
+                    <input type="text" name="ssn_last4" class="form-control" maxlength="4" placeholder="1234" value="<?=esc($data['ssn_last4'])?>">
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Save Employee</button>
-        <a href="index.php" class="btn btn-outline-secondary">Cancel</a>
+    <div style="display:flex;gap:10px">
+        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save Employee</button>
+        <a href="index.php" class="btn btn-outline">Cancel</a>
     </div>
 </form>
 

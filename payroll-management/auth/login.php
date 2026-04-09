@@ -24,11 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         if ($user && password_verify($password, $user['password'])) {
+            session_regenerate_id(true);
             $_SESSION['user_id']   = $user['id'];
             $_SESSION['username']  = $user['username'];
             $_SESSION['full_name'] = $user['full_name'];
             $_SESSION['role']      = $user['role'];
             $_SESSION['email']     = $user['email'];
+            unset($_SESSION['permissions']); // force fresh permission load
             $conn->query("UPDATE users SET last_login=NOW() WHERE id={$user['id']}");
             header("Location: ../dashboard.php");
             exit();

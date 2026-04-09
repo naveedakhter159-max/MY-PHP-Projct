@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+if (!canDo('Employees','edit')) { setFlash('error','Permission denied.'); redirect('index.php'); }
 $conn = getDBConnection();
 $action = $_POST['action'] ?? '';
 

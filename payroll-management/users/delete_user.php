@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+if (!canDo('Users','delete')) { setFlash('error','Permission denied.'); redirect('../users/index.php?tab=users'); }
 $conn = getDBConnection();
 
 $id   = (int)($_GET['id'] ?? 0);

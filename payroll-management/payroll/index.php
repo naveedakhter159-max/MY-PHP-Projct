@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+requirePerm('Payroll', 'view', 1);
 $depth=1; $pageTitle='Payroll';
 $conn = getDBConnection();
 
@@ -27,7 +28,9 @@ include '../includes/header.php'; include '../includes/sidebar.php';
 
 <div class="page-header">
     <div><h1>Payroll</h1><p class="subtitle">Process and track payroll</p></div>
+    <?php if (canDo('Payroll','edit')): ?>
     <a href="run.php" class="btn btn-primary"><i class="fa-solid fa-play"></i> Run Payroll</a>
+    <?php endif; ?>
 </div>
 
 <!-- Stats -->
@@ -101,10 +104,12 @@ include '../includes/header.php'; include '../includes/sidebar.php';
                 <td><span class="badge <?= $sc[$p['status']]??'badge-secondary' ?>"><?= $p['status'] ?></span></td>
                 <td>
                     <a href="../reports/payslip.php?id=<?= $p['id'] ?>" class="btn btn-outline btn-xs"><i class="fa fa-file-pdf"></i></a>
-                    <?php if ($p['status']==='Generated'): ?>
+                    <?php if ($p['status']==='Generated' && canDo('Payroll','edit')): ?>
                     <a href="pay.php?id=<?= $p['id'] ?>" class="btn btn-xs btn-success" onclick="return confirm('Mark as Paid?')"><i class="fa fa-check"></i></a>
                     <?php endif; ?>
+                    <?php if (canDo('Payroll','delete')): ?>
                     <button onclick="confirmDelete('delete.php?id=<?= $p['id'] ?>','payroll')" class="btn btn-xs" style="background:#fdecea;color:#c62828;border:1px solid #f5c6cb"><i class="fa fa-trash"></i></button>
+                    <?php endif; ?>
                 </td>
             </tr>
             <?php endwhile; endif; ?>

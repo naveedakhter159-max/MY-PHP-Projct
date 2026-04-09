@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+requirePerm('Employees', 'view', 1);
 $depth=1; $pageTitle='Employees';
 $conn = getDBConnection();
 $companyFilter = (int)($_GET['company'] ?? 0);
@@ -19,7 +20,9 @@ include '../includes/header.php'; include '../includes/sidebar.php';
 
 <div class="page-header">
     <div><h1>Employees</h1><p class="subtitle">Manage all employees</p></div>
+    <?php if (canDo('Employees','edit')): ?>
     <button class="btn btn-primary" onclick="openModal('addEmpModal')"><i class="fa-solid fa-plus"></i> Add Employee</button>
+    <?php endif; ?>
 </div>
 
 <!-- Filter -->
@@ -67,8 +70,12 @@ include '../includes/header.php'; include '../includes/sidebar.php';
                 <td><span class="badge <?= $sc[$e['status']]??'badge-secondary' ?>"><?= $e['status'] ?></span></td>
                 <td>
                     <a href="view.php?id=<?= $e['id'] ?>" class="btn btn-outline btn-xs"><i class="fa fa-eye"></i></a>
+                    <?php if (canDo('Employees','edit')): ?>
                     <button onclick="fillEditEmp(<?= htmlspecialchars(json_encode($e),ENT_QUOTES) ?>)" class="btn btn-outline btn-xs"><i class="fa fa-pen"></i></button>
+                    <?php endif; ?>
+                    <?php if (canDo('Employees','delete')): ?>
                     <button onclick="confirmDelete('delete.php?id=<?= $e['id'] ?>','<?= addslashes($e['first_name'].' '.$e['last_name']) ?>')" class="btn btn-xs" style="background:#fdecea;color:#c62828;border:1px solid #f5c6cb"><i class="fa fa-trash"></i></button>
+                    <?php endif; ?>
                 </td>
             </tr>
             <?php endwhile; ?>

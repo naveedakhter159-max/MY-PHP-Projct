@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+requirePerm('Settings', 'view', 1);
 $depth = 1; $pageTitle = 'Settings';
 $conn = getDBConnection();
 

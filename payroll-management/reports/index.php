@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+requirePerm('Reports', 'view', 1);
 $depth = 1; $pageTitle = 'Generate Reports';
 $conn = getDBConnection();
 

@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+if (!canDo('Users','edit')) { setFlash('error','Permission denied.'); redirect('index.php?tab=roles'); }
 $conn = getDBConnection();
 
 $action = $_POST['action'] ?? '';
@@ -90,6 +91,8 @@ if ($action === 'save_permissions') {
                       ON DUPLICATE KEY UPDATE can_view=$view, can_edit=$edit, can_delete=$delete");
     }
 
+    // Clear permission cache so changes apply to current session immediately
+    clearPermCache();
     setFlash('success', "Permissions for '$roleName' saved successfully!");
     redirect($back);
 }

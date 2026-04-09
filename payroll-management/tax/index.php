@@ -2,6 +2,8 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+requirePerm('Tax', 'view', 1);
+$canEditTax = canDo('Tax', 'edit');
 $depth = 1; $pageTitle = 'Tax Management';
 $conn = getDBConnection();
 
@@ -279,9 +281,9 @@ input:checked + .ts-slider:before { transform: translateX(18px); }
                     <button class="btn btn-outline" type="button" onclick="switchTab('state', document.querySelectorAll('.tm-tab')[1])">
                         Next: State Tax <i class="fa fa-arrow-right"></i>
                     </button>
-                    <button class="btn btn-primary" type="button" onclick="saveTaxSettings()">
+                    <?php if ($canEditTax): ?><button class="btn btn-primary" type="button" onclick="saveTaxSettings()">
                         <i class="fa fa-save"></i> Save Tax Settings
-                    </button>
+                    </button><?php endif; ?>
                 </div>
             </div>
 
@@ -324,9 +326,9 @@ input:checked + .ts-slider:before { transform: translateX(18px); }
                     <span class="toggle-label">Disability Insurance&nbsp; <strong id="disabilityLabel">Disabled</strong></span>
                 </div>
                 <div class="tm-save-row">
-                    <button class="btn btn-primary" type="button" onclick="saveTaxSettings()">
+                    <?php if ($canEditTax): ?><button class="btn btn-primary" type="button" onclick="saveTaxSettings()">
                         <i class="fa fa-save"></i> Save Tax Settings
-                    </button>
+                    </button><?php endif; ?>
                 </div>
             </div>
 
@@ -359,9 +361,9 @@ input:checked + .ts-slider:before { transform: translateX(18px); }
                     </div>
                 </div>
                 <div class="tm-save-row">
-                    <button class="btn btn-primary" type="button" onclick="saveTaxSettings()">
+                    <?php if ($canEditTax): ?><button class="btn btn-primary" type="button" onclick="saveTaxSettings()">
                         <i class="fa fa-save"></i> Save Tax Settings
-                    </button>
+                    </button><?php endif; ?>
                 </div>
             </div>
 
@@ -688,7 +690,9 @@ function loadEmployee(id) {
 }
 
 // ── Save tax settings ──────────────────────────────────
+const TAX_CAN_EDIT = <?= $canEditTax ? 'true' : 'false' ?>;
 function saveTaxSettings() {
+    if (!TAX_CAN_EDIT) { showToast('error','You do not have permission to edit tax settings.'); return; }
     if (!currentEmployeeId) {
         showToast('warning', 'Please select an employee first.');
         return;

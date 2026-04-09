@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+requirePerm('Companies', 'view', 1);
 $depth = 1; $pageTitle = 'Companies';
 $conn = getDBConnection();
 
@@ -16,7 +17,9 @@ include '../includes/header.php'; include '../includes/sidebar.php';
 
 <div class="page-header">
     <div><h1>Companies</h1><p class="subtitle">Manage client companies</p></div>
+    <?php if (canDo('Companies','edit')): ?>
     <button class="btn btn-primary" onclick="openModal('addCompanyModal')"><i class="fa-solid fa-plus"></i> Add Company</button>
+    <?php endif; ?>
 </div>
 
 <div class="card">
@@ -54,8 +57,12 @@ include '../includes/header.php'; include '../includes/sidebar.php';
                 <td><span class="badge <?= $sc[$c['status']]??'badge-secondary' ?>"><?= $c['status'] ?></span></td>
                 <td>
                     <a href="view.php?id=<?= $c['id'] ?>" class="btn btn-outline btn-xs"><i class="fa fa-eye"></i></a>
+                    <?php if (canDo('Companies','edit')): ?>
                     <button onclick="fillEditModal(<?= htmlspecialchars(json_encode($c), ENT_QUOTES) ?>)" class="btn btn-outline btn-xs"><i class="fa fa-pen"></i></button>
+                    <?php endif; ?>
+                    <?php if (canDo('Companies','delete')): ?>
                     <button onclick="confirmDelete('delete.php?id=<?= $c['id'] ?>','<?= addslashes($c['name']) ?>')" class="btn btn-xs" style="background:#fdecea;color:#c62828;border:1px solid #f5c6cb"><i class="fa fa-trash"></i></button>
+                    <?php endif; ?>
                 </td>
             </tr>
             <?php endwhile; ?>

@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+requirePerm('Users', 'view', 1);
 $depth = 1; $pageTitle = 'User & Role Management';
 $conn = getDBConnection();
 
@@ -142,9 +143,9 @@ include '../includes/header.php'; include '../includes/sidebar.php';
 
 <div class="page-header">
     <div><h1>User &amp; Role Management</h1><p class="subtitle">Manage system users and configure access permissions per role</p></div>
-    <?php if ($tab === 'users'): ?>
+    <?php if ($tab === 'users' && canDo('Users','edit')): ?>
     <button class="btn btn-primary" onclick="openModal('addUserModal')"><i class="fa fa-user-plus"></i> Add User</button>
-    <?php else: ?>
+    <?php elseif ($tab === 'roles' && canDo('Users','edit')): ?>
     <button class="btn btn-primary" onclick="openModal('addRoleModal')"><i class="fa fa-plus"></i> Add Role</button>
     <?php endif; ?>
 </div>
@@ -209,12 +210,14 @@ include '../includes/header.php'; include '../includes/sidebar.php';
                     </span>
                 </td>
                 <td>
+                    <?php if (canDo('Users','edit')): ?>
                     <button onclick='fillEditUser(<?=htmlspecialchars(json_encode(['id'=>$u['id'],'full_name'=>$u['full_name'],'username'=>$u['username'],'email'=>$u['email'],'role'=>$u['role'],'status'=>$u['status']]),ENT_QUOTES)?>)'
                             class="btn btn-outline btn-xs"><i class="fa fa-pen"></i></button>
-                    <?php if ((int)$u['id'] !== (int)($_SESSION['user_id']??0)): ?>
+                    <?php endif; ?>
+                    <?php if (canDo('Users','delete') && (int)$u['id'] !== (int)($_SESSION['user_id']??0)): ?>
                     <button onclick="confirmDelete('delete_user.php?id=<?=$u['id']?>','user <?=esc($u['full_name'])?>')"
                             class="btn btn-xs" style="background:#fdecea;color:#c62828;border:1px solid #f5c6cb"><i class="fa fa-trash"></i></button>
-                    <?php else: ?>
+                    <?php elseif ((int)$u['id'] === (int)($_SESSION['user_id']??0)): ?>
                     <span style="font-size:11px;color:#aaa;padding:0 6px">You</span>
                     <?php endif; ?>
                 </td>
@@ -267,9 +270,11 @@ while ($role = $rolesQ->fetch_assoc()):
             </div>
         </div>
         <div style="display:flex;gap:6px">
+            <?php if (canDo('Users','edit')): ?>
             <button onclick='fillEditRole(<?=htmlspecialchars(json_encode(["id"=>$role["id"],"name"=>$rn,"description"=>$role["description"]]),ENT_QUOTES)?>)'
                     class="btn btn-outline btn-xs"><i class="fa fa-pen"></i> Edit</button>
-            <?php if (!$role['is_system'] && $uCount == 0): ?>
+            <?php endif; ?>
+            <?php if (canDo('Users','delete') && !$role['is_system'] && $uCount == 0): ?>
             <button onclick="confirmDelete('delete_role.php?id=<?=$role['id']?>','role <?=esc($rn)?>')"
                     class="btn btn-xs" style="background:#fdecea;color:#c62828;border:1px solid #f5c6cb">
                 <i class="fa fa-trash"></i> Delete

@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+if (!canDo('Users','edit')) { setFlash('error','Permission denied.'); redirect('index.php?tab=users'); }
 $conn = getDBConnection();
 
 $action = $_POST['action'] ?? '';
@@ -102,6 +103,11 @@ if ($action === 'edit') {
         WHERE id=$id");
 
     if ($conn->affected_rows >= 0) {
+        // Clear permission cache if the current user's own role changed
+        if ($id === (int)($_SESSION['user_id'] ?? 0)) {
+            clearPermCache();
+            $_SESSION['role'] = $role;
+        }
         setFlash('success', "User '$fullName' updated successfully!");
     } else {
         setFlash('error', 'No changes made or error: ' . $conn->error);

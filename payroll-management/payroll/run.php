@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 requireLogin(1);
+requirePerm('Payroll', 'edit', 1);
 $depth=1; $pageTitle='Run Payroll';
 $conn = getDBConnection();
 

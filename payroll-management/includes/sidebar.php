@@ -6,7 +6,13 @@ $user  = currentUser();
 
 function navActive($pages, $dirs = []) {
     global $page, $dir;
-    return (in_array($page, (array)$pages) || in_array($dir, (array)$dirs)) ? 'active' : '';
+    // When a directory is specified, use ONLY the directory to decide active state.
+    // This prevents 'index.php' (shared by every module) from matching all nav items.
+    if (!empty($dirs)) {
+        return in_array($dir, (array)$dirs) ? 'active' : '';
+    }
+    // No directory given (e.g. dashboard.php at root) — match by filename only.
+    return in_array($page, (array)$pages) ? 'active' : '';
 }
 ?>
 <!-- Sidebar -->

@@ -1,0 +1,115 @@
+<?php
+$pdo = require_once __DIR__ . '/src/config/database.php';
+require_once __DIR__ . '/src/Auth.php';
+require_once __DIR__ . '/src/helpers.php';
+
+$auth = new Auth($pdo);
+
+$error = '';
+$success = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
+    $fullName = $_POST['full_name'] ?? '';
+    $confirmPassword = $_POST['confirm_password'] ?? '';
+
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Security validation failed. Please try again.';
+    } elseif (empty($email) || empty($password) || empty($fullName)) {
+        $error = 'Please fill in all fields';
+    } elseif ($password !== $confirmPassword) {
+        $error = 'Passwords do not match';
+    } else {
+        $result = $auth->register($email, $password, $fullName);
+        if ($result['success']) {
+            setFlash('success', $result['message']);
+            redirect(APP_URL . '/.login.php');
+        } else {
+            $error = $result['message'];
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - <?php echo APP_NAME; ?></title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container d-flex align-items-center justify-content-center min-vh-100">
+        <div class="w-100" style="max-width: 450px;">
+            <!-- Logo -->
+            <div class="text-center mb-5">
+                <h1 class="logo-text mb-2">Made for Keeps</h1>
+                <p class="text-muted">Create your account</p>
+            </div>
+
+            <!-- Error Message -->
+            <?php if ($error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?php echo htmlspecialchars($error); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+
+            <!-- Register Form -->
+            <form method="POST" class="needs-validation">
+                <input type="hidden" name="csrf_token" value="<?php echo getCsrfToken(); ?>">
+
+                <div class="mb-4">
+                    <label for="full_name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="full_name" name="full_name" required placeholder="John Doe">
+                </div>
+
+                <div class="mb-4">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" name="email" required placeholder="your@email.com">
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••" minlength="8">
+                    <small class="text-muted d-block mt-2">Must be at least 8 characters</small>
+                </div>
+
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required placeholder="••••••••">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-lg mb-4">Create Account</button>
+            </form>
+
+            <!-- Divider -->
+            <div class="d-flex align-items-center gap-2 my-4">
+                <hr class="flex-grow-1">
+                <span class="text-muted small">OR</span>
+                <hr class="flex-grow-1">
+            </div>
+
+            <!-- Login Link -->
+            <p class="text-center text-muted">
+                Already have an account?
+                <a href="login.php" class="text-decoration-none fw-semibold">Sign in here</a>
+            </p>
+
+            <!-- Back to Home -->
+            <p class="text-center mt-4">
+                <a href="index.php" class="text-decoration-none text-muted">← Back to Home</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

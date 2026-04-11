@@ -1,0 +1,449 @@
+/* ====================================
+   CSS Variables & Foundation
+   ==================================== */
+
+:root {
+    /* Colors from Figma */
+    --bg-cream: #E8E4DC;
+    --bg-light-cream: #F5F2ED;
+    --btn-sage: #7A956B;
+    --btn-sage-hover: #6B8460;
+    --text-dark: #333333;
+    --text-muted: #666666;
+    --footer-bg: #4A4A4A;
+    --border-color: #E0E0E0;
+
+    /* Typography */
+    --font-serif: 'Playfair Display', 'Georgia', serif;
+    --font-sans: 'Poppins', 'Segoe UI', sans-serif;
+    --font-lora: 'Lora', serif;
+
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+    --spacing-2xl: 4rem;
+
+    /* Transitions */
+    --transition: all 0.3s ease-in-out;
+}
+
+/* ====================================
+   Global Styles
+   ==================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-sans);
+    color: var(--text-dark);
+    background-color: #FFFFFF;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+a {
+    color: var(--text-dark);
+    transition: var(--transition);
+}
+
+/* ====================================
+   Hero Section Styles
+   ==================================== */
+
+.hero-section {
+    background-color: var(--bg-cream);
+    overflow: hidden;
+}
+
+.hero-image-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+    background: linear-gradient(135deg, #F5F2ED 0%, #E8E4DC 100%);
+}
+
+.hero-image-wrapper {
+    width: 100%;
+    max-width: 550px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.hero-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+}
+
+.hero-content-col {
+    background-color: var(--bg-cream);
+    padding: var(--spacing-2xl) var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-content {
+    max-width: 550px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Logo Styles */
+.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.logo {
+    width: 120px;
+    height: 120px;
+    max-width: 100%;
+    height: auto;
+}
+
+.logo-text {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-dark);
+    letter-spacing: 1px;
+}
+
+/* Hero Title */
+.hero-title {
+    font-family: var(--font-serif);
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.2;
+}
+
+/* Hero Subtitle */
+.hero-subtitle {
+    font-family: var(--font-sans);
+    font-size: 18px;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.8;
+    font-weight: 400;
+}
+
+/* Quote Styles */
+.hero-quote {
+    margin: var(--spacing-xl) 0;
+    border: none;
+    padding: 0;
+}
+
+.quote-text {
+    font-family: var(--font-lora);
+    font-size: clamp(18px, 4vw, 24px);
+    font-style: italic;
+    color: var(--text-dark);
+    font-weight: 500;
+    line-height: 1.8;
+}
+
+/* ====================================
+   Button Styles
+   ==================================== */
+
+.btn {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background-color: var(--btn-sage);
+    color: #FFFFFF;
+}
+
+.btn-primary:hover {
+    background-color: var(--btn-sage-hover);
+    color: #FFFFFF;
+    box-shadow: 0 6px 20px rgba(122, 149, 107, 0.3);
+    transform: translateY(-2px);
+}
+
+.btn-lg {
+    padding: 12px 32px;
+    font-size: 16px;
+}
+
+/* ====================================
+   Footer Styles
+   ==================================== */
+
+.footer {
+    background-color: var(--footer-bg);
+    color: #FFFFFF;
+    padding: var(--spacing-lg) var(--spacing-md);
+    margin-top: auto;
+}
+
+.footer-content {
+    font-size: 16px;
+    font-family: var(--font-sans);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.footer-content p {
+    color: #FFFFFF;
+    font-weight: 500;
+}
+
+.shield-icon {
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+
+/* ====================================
+   Form Styles
+   ==================================== */
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 12px 16px;
+    font-family: var(--font-sans);
+    font-size: 16px;
+    transition: var(--transition);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--btn-sage);
+    box-shadow: 0 0 0 0.2rem rgba(122, 149, 107, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    font-family: var(--font-sans);
+}
+
+/* ====================================
+   Navigation
+   ==================================== */
+
+.navbar {
+    background-color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-dark) !important;
+}
+
+.nav-link {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--text-dark) !important;
+    margin-left: var(--spacing-md);
+    position: relative;
+}
+
+.nav-link:hover {
+    color: var(--btn-sage) !important;
+}
+
+/* ====================================
+   Flash Messages
+   ==================================== */
+
+.alert {
+    border-radius: 8px;
+    border: none;
+    font-family: var(--font-sans);
+}
+
+.alert-success {
+    background-color: #D4EDDA;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #F8D7DA;
+    color: #721C24;
+}
+
+.alert-warning {
+    background-color: #FFF3CD;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #D1ECF1;
+    color: #0C5460;
+}
+
+/* ====================================
+   Responsive Design
+   ==================================== */
+
+/* Tablet (768px and down) */
+@media (max-width: 991.98px) {
+    .hero-image-col {
+        padding: var(--spacing-lg) var(--spacing-md);
+        order: 2;
+    }
+
+    .hero-content-col {
+        padding: var(--spacing-xl) var(--spacing-md);
+        order: 1;
+    }
+
+    .hero-title {
+        font-size: 36px;
+    }
+
+    .quote-text {
+        font-size: 20px;
+    }
+
+    .hero-image {
+        max-height: 400px;
+        object-fit: cover;
+    }
+}
+
+/* Mobile (576px and down) */
+@media (max-width: 575.98px) {
+    .hero-section {
+        background-color: #FFFFFF;
+    }
+
+    .hero-image-col {
+        padding: var(--spacing-md);
+        min-height: 300px;
+    }
+
+    .hero-content-col {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+
+    .hero-content {
+        text-align: center;
+    }
+
+    .hero-title {
+        font-size: 28px;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .hero-subtitle {
+        font-size: 16px;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .quote-text {
+        font-size: 18px;
+    }
+
+    .logo {
+        width: 100px;
+        height: 100px;
+    }
+
+    .logo-container {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .btn-lg {
+        padding: 10px 24px;
+        font-size: 15px;
+        width: 100%;
+    }
+
+    .footer-content {
+        font-size: 14px;
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .footer-content p {
+        margin-top: var(--spacing-sm);
+    }
+}
+
+/* ====================================
+   Utility Classes
+   ==================================== */
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.fw-semibold {
+    font-weight: 600;
+}
+
+.gap-3 {
+    gap: var(--spacing-md) !important;
+}
+
+.min-vh-100 {
+    min-height: 100vh;
+}
+
+/* ====================================
+   Animations
+   ==================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-content {
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+/* ====================================
+   Print Styles
+   ==================================== */
+
+@media print {
+    .navbar, .footer {
+        display: none;
+    }
+}

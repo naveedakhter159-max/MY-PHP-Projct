@@ -1,0 +1,40 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# PHP
+vendor/
+composer.lock
+
+# Node (if used)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Logs
+*.log
+logs/
+
+# Session files
+session/
+
+# Uploads
+public/uploads/
+public/images/
+
+# Cache
+*.cache
+cache/
+
+# OS
+Thumbs.db
+.DS_Store

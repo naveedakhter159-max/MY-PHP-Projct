@@ -1,0 +1,51 @@
+CORRECT FOLDER STRUCTURE FOR XAMPP:
+
+C:\xampp\htdocs\MY-PHP-Project\
+│
+├── index.php                    ← Home page (start here)
+├── login.php                    ← Login page
+├── register.php                 ← Registration page
+├── dashboard.php                ← User dashboard
+├── create-story.php             ← Create new story
+├── view-child.php               ← View child's stories
+├── view-story.php               ← View story details
+├── add-entry.php                ← Add entry to story
+├── logout.php                   ← Logout
+│
+├── .env                         ← Configuration file (IMPORTANT!)
+│
+├── css/
+│   └── style.css               ← All styles and colors
+│
+├── js/
+│   └── main.js                 ← JavaScript utilities
+│
+├── src/
+│   ├── Auth.php                ← Authentication class
+│   ├── helpers.php             ← Helper functions
+│   └── config/
+│       └── database.php        ← Database connection
+│
+├── database/
+│   └── schema.sql              ← Database tables
+│
+├── images/                      ← Image assets (empty)
+│
+└── uploads/                     ← User uploads (empty)
+
+
+STEP-BY-STEP SETUP:
+
+1. Create folder: C:\xampp\htdocs\MY-PHP-Project\
+
+2. Copy ALL files and folders listed above to that folder
+
+3. Create database:
+   - Open http://localhost/phpmyadmin
+   - Copy contents of database/schema.sql
+   - Paste in SQL tab and click Go
+
+4. Configure .env file with your database info
+
+5. Access at: http://localhost/MY-PHP-Project/
+

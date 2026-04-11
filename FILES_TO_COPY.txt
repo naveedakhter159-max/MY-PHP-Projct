@@ -1,0 +1,28 @@
+COPY THESE FILES AND FOLDERS TO: C:\xampp\htdocs\MY-PHP-Project\
+
+ROOT LEVEL FILES (PHP Pages):
+  ✓ index.php
+  ✓ login.php
+  ✓ register.php
+  ✓ dashboard.php
+  ✓ create-story.php
+  ✓ view-child.php
+  ✓ view-story.php
+  ✓ add-entry.php
+  ✓ logout.php
+  ✓ .env
+
+FOLDERS TO COPY:
+  ✓ css/ (with style.css)
+  ✓ js/ (with main.js)
+  ✓ src/ (with Auth.php, helpers.php, config/database.php)
+  ✓ database/ (with schema.sql)
+  ✓ images/ (empty folder)
+  ✓ uploads/ (empty folder)
+
+DO NOT COPY:
+  ✗ pages/ (old folder - not needed)
+  ✗ public/ (old folder - not needed)
+  ✗ .git/ (git folder)
+  ✗ README.md (optional - for reference only)
+  ✗ XAMPP_SETUP.md (optional - for reference only)
